@@ -59,24 +59,32 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
   if (!is_initialized_) {
     // first measurement
     ekf_.x_ = VectorXd(4);
-    float x, y, vx, vy;
+    float px, py, vx, vy;
 
     if (measurement_pack.sensor_type_ == MeasurementPackage::RADAR) {
       float rho = measurement_pack.raw_measurements_[0];
       float phi = measurement_pack.raw_measurements_[1];
       float rho_dot = measurement_pack.raw_measurements_[2];
-      x = rho * cos(phi);
-      y = rho * sin(phi);
+      px = rho * cos(phi);
+      py = rho * sin(phi);
       vx = rho_dot * cos(phi);
       vy = rho_dot * sin(phi);
     }
     else if (measurement_pack.sensor_type_ == MeasurementPackage::LASER) {
-      x = measurement_pack.raw_measurements_[0];
-      y = measurement_pack.raw_measurements_[1];
+      px = measurement_pack.raw_measurements_[0];
+      py = measurement_pack.raw_measurements_[1];
       vx = vy = 0;
     }
 
-    ekf_.x_ << x, y, vx, vy;
+    if (fabs(px) < 1e-4) {
+      px = 1e-4;
+    }
+
+    if (fabs(py) < 1e-4) {
+      py = 1e-4;
+    }
+
+    ekf_.x_ << px, py, vx, vy;
 
     //state covariance matrix P
     ekf_.P_ = MatrixXd(4, 4);

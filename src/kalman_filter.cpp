@@ -1,5 +1,6 @@
 #include "kalman_filter.h"
 #include <iostream>
+#include <math.h>
 
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
@@ -21,8 +22,7 @@ void KalmanFilter::Init(VectorXd &x_in, MatrixXd &P_in, MatrixXd &F_in,
 
 void KalmanFilter::Predict() {
   x_ = F_ * x_;
-  MatrixXd Ft = F_.transpose();
-  P_ = F_ * P_ * Ft + Q_;
+  P_ = F_ * P_ * F_.transpose() + Q_;
 }
 
 void KalmanFilter::Update(const VectorXd &z) {
@@ -31,17 +31,25 @@ void KalmanFilter::Update(const VectorXd &z) {
 }
 
 void KalmanFilter::UpdateEKF(const VectorXd &z) {
-  VectorXd h = VectorXd(3);
+  VectorXd hx = VectorXd(3);
   float px, py, vx, vy;
   px = x_(0);
   py = x_(1);
   vx = x_(2);
   vy = x_(3);
-  float h1 = sqrt(pow(px, 2) + pow(py, 2));
-  float h2 = atan(py / px);
-  float h3 = (px*vx+py*vy)/h1;
-  h << h1, h2, h3;
-  VectorXd y = z - h;
+  float rho = sqrt(pow(px, 2) + pow(py, 2));
+  float phi = atan2(py, px);
+  float rho_dot = (px*vx+py*vy)/rho;
+  hx << rho, phi, rho_dot;
+  VectorXd y = z - hx;
+
+  // Normalize the phi angle to a range between -pi and pi.
+  while (y(1) > M_PI) {
+    y(1) -= 2 * M_PI;
+  }
+  while (y(1) < -M_PI) {
+    y(1) += 2 * M_PI;
+  }
   KFHelper(y);
 }
 
