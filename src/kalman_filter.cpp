@@ -39,11 +39,11 @@ void KalmanFilter::UpdateEKF(const VectorXd &z) {
   vy = x_(3);
   float rho = sqrt(pow(px, 2) + pow(py, 2));
   float phi = atan2(py, px);
-  float rho_dot = (px*vx+py*vy)/rho;
+  float rho_dot = fabs(rho) < 1e-4 ? 0.0 : (px*vx+py*vy)/rho;
   hx << rho, phi, rho_dot;
   VectorXd y = z - hx;
 
-  // Normalize the phi angle to a range between -pi and pi.
+  // Normalize the phi angle to a range between -pi and pi
   while (y(1) > M_PI) {
     y(1) -= 2 * M_PI;
   }
